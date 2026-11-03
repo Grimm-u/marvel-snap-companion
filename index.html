@@ -1,692 +1,92 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marvel Snap Sidekick Companion</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        snap: {
-                            bg: '#08080c',
-                            card: '#10111a',
-                            panel: '#161826',
-                            border: '#27293d',
-                            accent: '#e62429',
-                            gold: '#fbbf24',
-                            cyan: '#06b6d4',
-                            purple: '#a855f7',
-                            green: '#22c55e',
-                            red: '#ef4444'
-                        }
-                    },
-                    fontFamily: {
-                        snap: ['Teko', 'sans-serif'],
-                        body: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #08080c;
-            color: #f3f4f6;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .font-snap-title {
-            font-family: 'Teko', sans-serif;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-        /* Custom Compact Scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #08080c;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #27293d;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #06b6d4;
-        }
-        
-        /* Tactical Card States */
-        .card-state-deck {
-            border-color: #27293d;
-            background: rgba(22, 24, 38, 0.9);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-        }
-        .card-state-hand {
-            border-color: #06b6d4;
-            background: rgba(6, 182, 212, 0.12);
-            box-shadow: 0 0 12px rgba(6, 182, 212, 0.35);
-        }
-        .card-state-played {
-            border-color: #ef4444;
-            background: rgba(239, 68, 68, 0.08);
-            opacity: 0.45;
-            position: relative;
-        }
-        .card-state-played::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -10%;
-            right: -10%;
-            height: 2px;
-            background: #ef4444;
-            transform: rotate(-12deg);
-            box-shadow: 0 0 6px #ef4444;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marvel Snap Companion & Meta Advisor</title>
+  <style>
+    :root {
+      --bg-dark: #090b10;
+      --panel-bg: #131722;
+      --card-bg: #1c2234;
+      --primary: #8a2be2;
+      --cyan: #00f0ff;
+      --red: #ff3366;
+      --yellow: #ffcc00;
+      --green: #00ff88;
+      --text-main: #f1f5f9;
+      --text-sub: #94a3b8;
+      --border: #2e364f;
+    }
 
-        /* Fast pulse highlights */
-        .glow-gold {
-            box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
-        }
-    </style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-main); padding: 12px; font-size: 14px; }
+    
+    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+    .header h1 { font-size: 1.1rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 1px; }
+
+    .import-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+    .import-bar input { flex: 1; background: var(--panel-bg); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; }
+    .import-bar button { background: var(--primary); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+    .presets { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .btn-preset { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text-sub); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; }
+    .btn-preset:hover, .btn-preset.active { border-color: var(--cyan); color: #fff; background: rgba(0,240,255,0.1); }
+
+    .layout-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 850px) { .layout-grid { grid-template-columns: 340px 1fr 300px; } }
+
+    .panel { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+    .panel h2 { font-size: 0.95rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Deck Tracker Cards */
+    .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .snap-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px 4px; text-align: center; cursor: pointer; user-select: none; position: relative; }
+    .snap-card .cost { position: absolute; top: 4px; left: 4px; background: #2563eb; color: #fff; font-size: 0.7rem; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .snap-card .name { font-size: 0.72rem; font-weight: bold; margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    /* Card States */
+    .snap-card.in-deck { border-color: var(--cyan); }
+    .snap-card.in-hand { border-color: var(--yellow); background: rgba(255, 204, 0, 0.1); }
+    .snap-card.played { border-color: var(--border); opacity: 0.35; text-decoration: line-through; }
+
+    /* Turn Bar Controls */
+    .turn-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: var(--card-bg); padding: 8px 12px; border-radius: 6px; }
+    .turn-btn { background: var(--primary); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+    /* Threat Cards */
+    .threat-item { background: var(--card-bg); border-left: 4px solid var(--border); padding: 8px 10px; border-radius: 4px; margin-bottom: 8px; }
+    .threat-critical { border-left-color: var(--red); }
+    .threat-high { border-left-color: var(--yellow); }
+    .threat-mod { border-left-color: var(--cyan); }
+    .threat-header { display: flex; justify-content: space-between; font-weight: bold; font-size: 0.85rem; }
+    .threat-desc { font-size: 0.75rem; color: var(--text-sub); margin-top: 4px; line-height: 1.2; }
+
+    .tag-container { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag { font-size: 0.7rem; background: rgba(0,240,255,0.1); color: var(--cyan); border: 1px solid rgba(0,240,255,0.3); padding: 2px 6px; border-radius: 4px; }
+
+    /* Retreat Equity Box */
+    .equity-box { padding: 10px; border-radius: 6px; background: var(--card-bg); border: 1px solid var(--border); margin-top: 8px; }
+    .equity-status { font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; }
+    .equity-good { color: var(--green); }
+    .equity-warn { color: var(--yellow); }
+    .equity-bad { color: var(--red); }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col bg-snap-bg text-gray-100 overflow-x-hidden text-xs">
+<body>
 
-    <!-- TOP CONTROL HUD -->
-    <header class="border-b border-snap-border bg-[#0a0b12] px-3 py-2 sticky top-0 z-50 flex flex-col gap-2">
-        <div class="flex items-center justify-between gap-2">
-            <!-- Brand -->
-            <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-snap-accent animate-ping"></span>
-                <h1 class="font-snap-title text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-amber-400 to-cyan-400 leading-none">
-                    SNAP SIDEKICK HUD
-                </h1>
-            </div>
+  <div class="header">
+    <h1>Marvel Snap Companion</h1>
+    <span id="turnLabel" style="color:var(--yellow); font-weight:bold;">Turn 1 / 6</span>
+  </div>
 
-            <!-- Match Controls -->
-            <div class="flex items-center gap-2">
-                <div class="bg-black/60 border border-snap-border px-2.5 py-1 rounded-lg flex items-center gap-2">
-                    <div class="text-center">
-                        <div class="text-[9px] text-gray-400 font-semibold uppercase">Turn</div>
-                        <div id="turn-display" class="font-snap-title text-lg text-amber-400 leading-none">1 / 6</div>
-                    </div>
-                    <div class="h-5 w-px bg-snap-border"></div>
-                    <div class="text-center">
-                        <div class="text-[9px] text-gray-400 font-semibold uppercase">Energy</div>
-                        <div id="energy-display" class="font-snap-title text-lg text-cyan-400 leading-none">1⚡</div>
-                    </div>
-                    <div class="h-5 w-px bg-snap-border"></div>
-                    <div class="text-center">
-                        <div class="text-[9px] text-gray-400 font-semibold uppercase">In Deck</div>
-                        <div id="deck-count-display" class="font-snap-title text-lg text-purple-400 leading-none">8</div>
-                    </div>
-                </div>
+  <div class="import-bar">
+    <input type="text" id="deckInput" placeholder="Paste Marvel Snap Deck Code..." />
+    <button onclick="importDeckCode()">Import</button>
+  </div>
 
-                <button id="btn-advance-turn" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition active:scale-95 shadow-md">
-                    <span>ADVANCE TURN</span>
-                    <i class="fa-solid fa-forward text-[10px]"></i>
-                </button>
-
-                <button id="btn-reset" class="bg-red-950/40 border border-red-800/60 hover:bg-red-900 text-red-300 px-2.5 py-1.5 rounded-lg font-bold flex items-center gap-1 transition active:scale-95">
-                    <i class="fa-solid fa-rotate-right text-xs"></i>
-                    <span class="hidden sm:inline">Reset</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- INSTANT ARCHETYPE TOP BAR SWITCHER -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar">
-            <span class="text-[10px] text-gray-400 uppercase font-bold shrink-0 pr-1"><i class="fa-solid fa-bolt text-amber-400"></i> Deck:</span>
-            <div id="preset-buttons-container" class="flex items-center gap-1.5">
-                <!-- Dynamically populated preset buttons -->
-            </div>
-            <button id="btn-open-code-import" class="ml-auto shrink-0 text-[10px] bg-snap-panel border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 font-bold px-2 py-1 rounded flex items-center gap-1 transition">
-                <i class="fa-solid fa-paste"></i> Code
-            </button>
-        </div>
-    </header>
-
-    <!-- MAIN COMPACT DASHBOARD -->
-    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 p-2.5 max-w-[1920px] mx-auto w-full">
-
-        <!-- COLUMN 1: LIVE SPEED-RUN TRACKER & PROBABILITIES (5 COLS) -->
-        <section class="lg:col-span-5 flex flex-col gap-2.5">
-            <div class="bg-snap-card border border-snap-border rounded-xl p-2.5 flex-1 flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <h2 class="font-snap-title text-xl font-bold text-gray-200">DECK TRACKER</h2>
-                        <span class="text-[10px] text-gray-400 font-mono">(Tap card: Deck ➔ Hand ➔ Dead)</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-[9px] font-bold">
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-gray-500"></span> Deck</span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400"></span> Hand</span>
-                        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Dead/Played</span>
-                    </div>
-                </div>
-
-                <!-- 12-Card Dynamic Fast-Touch Grid -->
-                <div id="card-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 xl:grid-cols-4 gap-1.5 overflow-y-auto max-h-[420px] lg:max-h-[calc(100vh-270px)] pr-0.5">
-                    <!-- Cards injected via JS -->
-                </div>
-
-                <!-- LIVE DRAW PROBABILITIES ENGINE -->
-                <div class="pt-2 border-t border-snap-border bg-snap-panel/80 rounded-lg p-2 flex flex-col gap-1.5 mt-auto">
-                    <div class="flex justify-between items-center text-xs">
-                        <span class="font-bold text-amber-400 flex items-center gap-1">
-                            <i class="fa-solid fa-calculator"></i> Draw Odds Matrix
-                        </span>
-                        <span id="drawn-count-summary" class="text-[10px] text-gray-400">Remaining Deck: 8</span>
-                    </div>
-
-                    <!-- Percent Odds Grid per turn -->
-                    <div class="grid grid-cols-4 gap-1.5 text-center">
-                        <div class="bg-black/50 border border-snap-border p-1 rounded">
-                            <div class="text-[9px] text-gray-400 uppercase font-semibold">Turn 3</div>
-                            <div id="prob-t3" class="font-snap-title text-base font-bold text-cyan-300">0%</div>
-                        </div>
-                        <div class="bg-black/50 border border-snap-border p-1 rounded">
-                            <div class="text-[9px] text-gray-400 uppercase font-semibold">Turn 4</div>
-                            <div id="prob-t4" class="font-snap-title text-base font-bold text-cyan-300">0%</div>
-                        </div>
-                        <div class="bg-black/50 border border-snap-border p-1 rounded">
-                            <div class="text-[9px] text-gray-400 uppercase font-semibold">Turn 5</div>
-                            <div id="prob-t5" class="font-snap-title text-base font-bold text-cyan-300">0%</div>
-                        </div>
-                        <div class="bg-black/50 border border-snap-border p-1 rounded">
-                            <div class="text-[9px] text-gray-400 uppercase font-semibold">Turn 6</div>
-                            <div id="prob-t6" class="font-snap-title text-base font-bold text-amber-400">0%</div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-1.5 text-[10px] mt-0.5">
-                        <div class="bg-cyan-950/30 border border-cyan-800/40 p-1.5 rounded text-gray-200">
-                            <strong class="text-cyan-400 block">Optimal Target Draws:</strong>
-                            <span id="optimal-draws-list" class="text-gray-300 truncate block">--</span>
-                        </div>
-                        <div class="bg-red-950/20 border border-red-900/40 p-1.5 rounded text-gray-200">
-                            <strong class="text-red-400 block">Dead / Suboptimal Draws:</strong>
-                            <span id="dead-draws-list" class="text-gray-300 truncate block">--</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- COLUMN 2: ULTRA-FAST LOCATION ANALYZER (4 COLS) -->
-        <section class="lg:col-span-4 flex flex-col gap-2.5">
-            <div class="bg-snap-card border border-snap-border rounded-xl p-2.5 flex-1 flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-snap-title text-xl font-bold text-purple-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-location-dot"></i> LOCATION ANALYZER
-                    </h2>
-                    <span class="text-[10px] text-gray-400">3 Active Lanes</span>
-                </div>
-
-                <!-- Instant Location Search & Quick Picker -->
-                <div class="relative">
-                    <div class="flex items-center bg-black/60 border border-snap-border rounded-lg px-2.5 py-1.5 focus-within:border-purple-400">
-                        <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs mr-2"></i>
-                        <input id="location-search-input" type="text" placeholder="Search problematic location (e.g. Death's Domain, Bar with No Name)..." class="bg-transparent text-xs w-full focus:outline-none text-gray-100 placeholder-gray-500">
-                    </div>
-                    <!-- Auto Suggestion Dropdown -->
-                    <div id="location-suggestions" class="absolute left-0 right-0 top-full mt-1 bg-snap-panel border border-purple-500/50 rounded-lg shadow-2xl z-30 max-h-48 overflow-y-auto hidden">
-                        <!-- Populated JS -->
-                    </div>
-                </div>
-
-                <!-- 3 Lane Selectors -->
-                <div class="grid grid-cols-3 gap-1.5">
-                    <div class="flex flex-col gap-0.5">
-                        <span class="text-[9px] text-gray-400 font-bold uppercase text-center">Lane 1</span>
-                        <select id="lane-1-select" class="bg-black/60 border border-snap-border text-[11px] rounded p-1 text-gray-200 focus:border-purple-400 truncate">
-                            <!-- Populated JS -->
-                        </select>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                        <span class="text-[9px] text-gray-400 font-bold uppercase text-center">Lane 2</span>
-                        <select id="lane-2-select" class="bg-black/60 border border-snap-border text-[11px] rounded p-1 text-gray-200 focus:border-purple-400 truncate">
-                            <!-- Populated JS -->
-                        </select>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                        <span class="text-[9px] text-gray-400 font-bold uppercase text-center">Lane 3</span>
-                        <select id="lane-3-select" class="bg-black/60 border border-snap-border text-[11px] rounded p-1 text-gray-200 focus:border-purple-400 truncate">
-                            <!-- Populated JS -->
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Location Analysis Breakdown Cards -->
-                <div id="location-cards-container" class="flex-1 flex flex-col gap-2 overflow-y-auto max-h-[380px] lg:max-h-[calc(100vh-270px)] pr-0.5 mt-1">
-                    <!-- Cards populated via JS -->
-                </div>
-            </div>
-        </section>
-
-        <!-- COLUMN 3: ARCHETYPE EQUITY & TECH WATCH (3 COLS) -->
-        <section class="lg:col-span-3 flex flex-col gap-2.5">
-            <div class="bg-snap-card border border-snap-border rounded-xl p-2.5 flex-1 flex flex-col gap-2">
-                <div class="flex items-center justify-between">
-                    <h2 class="font-snap-title text-xl font-bold text-red-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-shield-cat"></i> OPPONENT COUNTERS
-                    </h2>
-                </div>
-
-                <!-- Opponent Archetype Dropdown Selector -->
-                <div>
-                    <label class="text-[10px] text-gray-400 uppercase font-bold mb-1 block">Opponent Archetype</label>
-                    <select id="opponent-archetype-select" class="bg-black/60 border border-snap-border text-xs rounded-lg p-2 w-full text-gray-100 focus:border-red-400">
-                        <option value="destroy">Destroy (Knull, Death, Venom)</option>
-                        <option value="discard">Discard / Hela (Corvus, Modok)</option>
-                        <option value="high_evo">High Evolutionary (Cyclops, Hulk)</option>
-                        <option value="bounce">Bounce (Beast, Falcon, Hit-Monkey)</option>
-                        <option value="clog">Clog / Junk (Debrii, White Widow)</option>
-                        <option value="surfer">Silver Surfer (Shaw, Brood)</option>
-                        <option value="move">Move / Heimdall (Vulture, Dagger)</option>
-                        <option value="ongoing">Ongoing / Spectrum (Armor, Iron Man)</option>
-                    </select>
-                </div>
-
-                <!-- High Risk Tech Cards List -->
-                <div class="bg-snap-panel border border-snap-border p-2 rounded-lg flex flex-col gap-1.5">
-                    <span class="text-[10px] uppercase font-bold text-amber-400 flex items-center gap-1">
-                        <i class="fa-solid fa-triangle-exclamation"></i> High-Threat Tech Cards
-                    </span>
-                    <div id="tech-threats-grid" class="grid grid-cols-2 gap-1 text-[11px]">
-                        <!-- Populated JS -->
-                    </div>
-                </div>
-
-                <!-- Instant Snap / Retreat Equity Advisor -->
-                <div class="bg-gradient-to-br from-red-950/40 via-snap-panel to-amber-950/30 border border-red-800/40 p-2.5 rounded-lg flex flex-col gap-1.5 mt-auto">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-red-400 flex items-center gap-1">
-                            <i class="fa-solid fa-cube text-red-500"></i> Snap / Retreat Equity
-                        </span>
-                        <span id="equity-badge" class="px-2 py-0.5 text-[9px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold uppercase">
-                            HOLD / NEUTRAL
-                        </span>
-                    </div>
-
-                    <div class="text-[11px] flex flex-col gap-1 text-gray-300">
-                        <div><strong class="text-green-400">Snap Trigger:</strong> <span id="snap-condition-text">Loading...</span></div>
-                        <div><strong class="text-red-400">Retreat Trigger:</strong> <span id="retreat-condition-text">Loading...</span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- CODE IMPORT MODAL -->
-    <div id="import-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
-        <div class="bg-snap-card border border-snap-border w-full max-w-md rounded-xl p-4 shadow-2xl flex flex-col gap-3">
-            <div class="flex items-center justify-between border-b border-snap-border pb-2">
-                <h3 class="font-snap-title text-xl font-bold text-gray-100">PASTE DECK CODE / LIST</h3>
-                <button id="btn-close-modal" class="text-gray-400 hover:text-white text-base"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <p class="text-[11px] text-gray-400">Paste official Marvel Snap deck string or 12 card names (one per line):</p>
-            <textarea id="import-textarea" rows="6" placeholder="Deadpool&#10;X-23&#10;Carnage&#10;Wolverine&#10;Venom&#10;Killmonger&#10;Deathlok&#10;Shang-Chi&#10;Knull&#10;Death..." class="bg-black/70 border border-snap-border rounded-lg p-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400"></textarea>
-
-            <div class="flex justify-end gap-2 pt-1">
-                <button id="btn-cancel-modal" class="px-3 py-1.5 bg-gray-800 text-gray-300 rounded text-xs font-bold hover:bg-gray-700">Cancel</button>
-                <button id="btn-confirm-modal" class="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs font-bold">Import Deck</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        // --- DATA STRUCTURES ---
-        const META_DECKS = {
-            destroy: {
-                id: "destroy",
-                name: "Destroy",
-                icon: "fa-skull",
-                cards: [
-                    { name: "Deadpool", cost: 1, power: 1, tag: "Key Scale", optimal: true },
-                    { name: "X-23", cost: 1, power: 2, tag: "Ramp", optimal: true },
-                    { name: "Nico Minoru", cost: 1, power: 2, tag: "Tech", optimal: false },
-                    { name: "Carnage", cost: 2, power: 2, tag: "Destroyer", optimal: true },
-                    { name: "Wolverine", cost: 2, power: 2, tag: "Target", optimal: false },
-                    { name: "Killmonger", cost: 3, power: 3, tag: "Tech/Destroy", optimal: false },
-                    { name: "Venom", cost: 3, power: 3, tag: "Key Destroyer", optimal: true },
-                    { name: "Deathlok", cost: 3, power: 5, tag: "Destroyer", optimal: false },
-                    { name: "Shang-Chi", cost: 4, power: 3, tag: "Tech", optimal: false },
-                    { name: "Arnim Zola", cost: 6, power: 0, tag: "Finisher", optimal: true },
-                    { name: "Knull", cost: 6, power: 0, tag: "Key Finisher", optimal: true },
-                    { name: "Death", cost: 8, power: 12, tag: "Key Finisher", optimal: true }
-                ]
-            },
-            discard: {
-                id: "discard",
-                name: "Hela Discard",
-                icon: "fa-dumpster-fire",
-                cards: [
-                    { name: "Blade", cost: 1, power: 3, tag: "Discard", optimal: false },
-                    { name: "Morbius", cost: 2, power: 0, tag: "Scaler", optimal: false },
-                    { name: "Sif", cost: 3, power: 5, tag: "Target Discard", optimal: true },
-                    { name: "Corvus Glaive", cost: 3, power: 3, tag: "Ramp Discard", optimal: true },
-                    { name: "Black Cat", cost: 4, power: 10, tag: "Auto Discard", optimal: false },
-                    { name: "Jubilee", cost: 4, power: 1, tag: "Pull", optimal: false },
-                    { name: "Blink", cost: 5, power: 7, tag: "Pull", optimal: true },
-                    { name: "Hela", cost: 6, power: 6, tag: "KEY WIN-CON", optimal: true },
-                    { name: "Magneto", cost: 6, power: 12, tag: "Payoff", optimal: true },
-                    { name: "Red Hulk", cost: 6, power: 11, tag: "Payoff", optimal: true },
-                    { name: "The Infinaut", cost: 6, power: 20, tag: "Payoff", optimal: true },
-                    { name: "Giganto", cost: 6, power: 14, tag: "Payoff", optimal: false }
-                ]
-            },
-            high_evo: {
-                id: "high_evo",
-                name: "High Evo",
-                icon: "fa-radiation",
-                cards: [
-                    { name: "Sunspot", cost: 1, power: 1, tag: "Scaler", optimal: true },
-                    { name: "Misty Knight", cost: 1, power: 2, tag: "Buff", optimal: false },
-                    { name: "Scorpion", cost: 2, power: 2, tag: "Afflict", optimal: false },
-                    { name: "Armor", cost: 2, power: 3, tag: "Protection", optimal: false },
-                    { name: "Cassandra Nova", cost: 3, power: 1, tag: "Afflict", optimal: true },
-                    { name: "Cyclops", cost: 3, power: 4, tag: "Key Afflict", optimal: true },
-                    { name: "High Evolutionary", cost: 4, power: 4, tag: "Enabler", optimal: false },
-                    { name: "Shang-Chi", cost: 4, power: 3, tag: "Tech", optimal: false },
-                    { name: "Spider-Woman", cost: 5, power: 8, tag: "Afflict", optimal: false },
-                    { name: "Abomination", cost: 5, power: 9, tag: "Discount Body", optimal: true },
-                    { name: "Hulk", cost: 6, power: 12, tag: "Key Finisher", optimal: true },
-                    { name: "Red Hulk", cost: 6, power: 11, tag: "Finisher", optimal: true }
-                ]
-            },
-            bounce: {
-                id: "bounce",
-                name: "Bounce",
-                icon: "fa-rotate-left",
-                cards: [
-                    { name: "The Hood", cost: 1, power: -3, tag: "Token Target", optimal: true },
-                    { name: "Hawkeye", cost: 1, power: 1, tag: "Target", optimal: false },
-                    { name: "Nico Minoru", cost: 1, power: 2, tag: "Tech", optimal: true },
-                    { name: "Rocket Raccoon", cost: 1, power: 1, tag: "Target", optimal: false },
-                    { name: "Falcon", cost: 2, power: 3, tag: "Bounce 1s", optimal: true },
-                    { name: "Beast", cost: 3, power: 3, tag: "KEY ENABLER", optimal: true },
-                    { name: "The Collector", cost: 2, power: 2, tag: "Scaler", optimal: true },
-                    { name: "Angela", cost: 2, power: 0, tag: "Scaler", optimal: true },
-                    { name: "Bishop", cost: 3, power: 1, tag: "Scaler", optimal: false },
-                    { name: "Hit-Monkey", cost: 3, power: 2, tag: "Finisher", optimal: true },
-                    { name: "Shang-Chi", cost: 4, power: 3, tag: "Tech", optimal: false },
-                    { name: "America Chavez", cost: 1, power: 2, tag: "Buff", optimal: false }
-                ]
-            },
-            clog: {
-                id: "clog",
-                name: "Clog / Junk",
-                icon: "fa-ban",
-                cards: [
-                    { name: "The Hood", cost: 1, power: -3, tag: "Clog Send", optimal: true },
-                    { name: "White Widow", cost: 2, power: 2, tag: "KEY CLOG", optimal: true },
-                    { name: "Green Goblin", cost: 3, power: -3, tag: "Clog", optimal: true },
-                    { name: "Debrii", cost: 3, power: 3, tag: "Clog Lanes", optimal: true },
-                    { name: "Viper", cost: 3, power: 5, tag: "Clog Send", optimal: true },
-                    { name: "Red Guardian", cost: 3, power: 3, tag: "Tech", optimal: false },
-                    { name: "Shang-Chi", cost: 4, power: 3, tag: "Tech", optimal: false },
-                    { name: "Sentry", cost: 4, power: 10, tag: "Big Body", optimal: true },
-                    { name: "Hobgoblin", cost: 5, power: -8, tag: "Heavy Clog", optimal: true },
-                    { name: "Cannonball", cost: 5, power: 8, tag: "Finisher", optimal: true },
-                    { name: "Alioth", cost: 6, power: 8, tag: "Finisher", optimal: false },
-                    { name: "Annihilus", cost: 5, power: 6, tag: "KEY SEND", optimal: true }
-                ]
-            },
-            surfer: {
-                id: "surfer",
-                name: "Silver Surfer",
-                icon: "fa-water",
-                cards: [
-                    { name: "Nova", cost: 1, power: 1, tag: "Buff", optimal: false },
-                    { name: "Forge", cost: 2, power: 2, tag: "Buff", optimal: false },
-                    { name: "Brood", cost: 3, power: 2, tag: "KEY TARGET", optimal: true },
-                    { name: "Silver Surfer", cost: 3, power: 2, tag: "KEY WIN-CON", optimal: true },
-                    { name: "Killmonger", cost: 3, power: 3, tag: "Tech", optimal: true },
-                    { name: "Sebastian Shaw", cost: 3, power: 4, tag: "Key Scaler", optimal: true },
-                    { name: "Red Guardian", cost: 3, power: 3, tag: "Tech", optimal: false },
-                    { name: "Hope Summers", cost: 3, power: 4, tag: "Ramp", optimal: true },
-                    { name: "Copycat", cost: 3, power: 5, tag: "Tech", optimal: false },
-                    { name: "Sera", cost: 5, power: 4, tag: "KEY RAMP", optimal: true },
-                    { name: "Absorbing Man", cost: 4, power: 5, tag: "Copier", optimal: true },
-                    { name: "Jubilee", cost: 4, power: 1, tag: "Pull", optimal: false }
-                ]
-            },
-            move: {
-                id: "move",
-                name: "Move",
-                icon: "fa-arrows-up-down-left-right",
-                cards: [
-                    { name: "Iron Fist", cost: 1, power: 2, tag: "Mover", optimal: true },
-                    { name: "Ghost-Spider", cost: 1, power: 2, tag: "Mover", optimal: true },
-                    { name: "Dagger", cost: 2, power: 2, tag: "Scaler", optimal: true },
-                    { name: "Multiple Man", cost: 2, power: 3, tag: "Multiplier", optimal: true },
-                    { name: "Cloak", cost: 2, power: 4, tag: "Enabler", optimal: false },
-                    { name: "Vulture", cost: 3, power: 3, tag: "Scaler", optimal: true },
-                    { name: "Doctor Strange", cost: 3, power: 3, tag: "Mover", optimal: false },
-                    { name: "Hulkbuster", cost: 3, power: 5, tag: "Buff", optimal: true },
-                    { name: "Hercules", cost: 4, power: 7, tag: "Enabler", optimal: false },
-                    { name: "Heimdall", cost: 6, power: 9, tag: "KEY FINISHER", optimal: true },
-                    { name: "Magneto", cost: 6, power: 12, tag: "Displace", optimal: false },
-                    { name: "Torch", cost: 1, power: 2, tag: "Scaler", optimal: true }
-                ]
-            }
-        };
-
-        const LOCATIONS_LIST = [
-            { id: "none", name: "-- Empty Lane --", rating: "neutral", text: "No active lane modifier." },
-            { id: "deaths_domain", name: "Death's Domain", rating: "red", text: "When you play a card here, destroy it.", playaround: "Use Wolverine, X-23, Deadpool, Death, Nimrod, Move, or Arnim Zola." },
-            { id: "bar_no_name", name: "Bar with No Name", rating: "red", text: "Whoever has the least Power here wins.", playaround: "Avoid playing high power. Green Goblin (-3) or Hood (-3) easily win this lane." },
-            { id: "kamar_taj", name: "Kamar-Taj", rating: "green", text: "On Reveal abilities happen twice.", playaround: "Massive synergy for Venom, Carnage, Surfer, Sif, White Widow, or Beast." },
-            { id: "sanctum", name: "Sanctum Sanctorum", rating: "red", text: "Cards cannot be played here.", playaround: "Rely on move effects, Doom bots, White Tiger, Brood, or Arnim Zola." },
-            { id: "deep_space", name: "Deep Space", rating: "red", text: "Card text is disabled here.", playaround: "Drop vanilla high-stat bodies (Red Hulk, Infinaut). Avoid key combo enablers." },
-            { id: "elysium", name: "Elysium", rating: "green", text: "Cards cost 1 less.", playaround: "Enables explosive multi-card dumps on Turn 6 for Bounce and Surfer." },
-            { id: "lukes_bar", name: "Luke's Bar", rating: "yellow", text: "After you play a card here, return it to your hand.", playaround: "Great for re-triggering Hood, Brood, Surfer, or cheap 1-drops." },
-            { id: "altar_of_death", name: "Altar of Death", rating: "green", text: "When you play a card here, destroy it to get +2 Energy next turn.", playaround: "Destroys deck goldmine! Throw Deadpool/X-23 here repeatedly for huge energy." },
-            { id: "central_park", name: "Central Park", rating: "yellow", text: "Add a 1-Power Squirrel to each location.", playaround: "Clogs lanes early. Destroy players feed Killmonger/Death." },
-            { id: "kyln", name: "Kyln", rating: "yellow", text: "You can't play cards here after turn 4.", playaround: "Secure lane priority before Turn 4 ends." }
-        ];
-
-        const OPPONENT_THREATS = {
-            destroy: {
-                tech: ["Killmonger (T3/T6)", "Shang-Chi (T4-6)", "Knull (T6)", "Alioth (T6)"],
-                snap: "Opponent destroyed X-23 & holds 0-Cost Death + Knull.",
-                retreat: "They drop Armor/Cosmo on your primary destroy lane."
-            },
-            discard: {
-                tech: ["Corvus Glaive", "Blink", "Hela (T6)", "Magneto"],
-                snap: "Infinaut + Magneto discarded early and they hold Hela.",
-                retreat: "You lack board wide counters (Alioth/Cosmo) against T6 Hela."
-            },
-            high_evo: {
-                tech: ["Cyclops (Afflict)", "Abomination", "Evolved Hulk", "Shang-Chi"],
-                snap: "Their Cyclops afflict engine is active on 2 stacked lanes.",
-                retreat: "You play ongoing/buffs without Luke Cage in hand."
-            },
-            bounce: {
-                tech: ["Beast", "Hit-Monkey (T6)", "Killmonger", "Shadow King"],
-                snap: "Beast bounce executed on T3/T4 with full hand of 0-cost cards.",
-                retreat: "Opponent holds T6 priority with Killmonger in hand."
-            },
-            clog: {
-                tech: ["White Widow", "Debrii", "Cannonball", "Annihilus"],
-                snap: "2 of your lanes have 3+ weak clogged tokens by Turn 4.",
-                retreat: "You lack destroy/bounce tools to clear right lane Void."
-            },
-            surfer: {
-                tech: ["Silver Surfer", "Brood", "Sera", "Killmonger"],
-                snap: "Sera dropped on Turn 5 with 3+ 3-cost cards in hand.",
-                retreat: "Board locked down before Surfer value dump."
-            },
-            move: {
-                tech: ["Heimdall (T6)", "Vulture", "Dagger", "Magneto"],
-                snap: "Dagger/Vulture scaled above 10+ power moving into Turn 6.",
-                retreat: "Left lane unfortified against Heimdall shift."
-            },
-            ongoing: {
-                tech: ["Armor", "Cosmo", "Iron Man", "Spectrum / Tribunal"],
-                snap: "Iron Man + Mystique combo locked in on single lane.",
-                retreat: "Enchantress / Rogue strips key ongoing buffs."
-            }
-        };
-
-        // --- GLOBAL APP STATE ---
-        let state = {
-            activeDeckKey: 'destroy',
-            currentDeckCards: [],
-            cardStates: {}, // 'deck', 'hand', 'dead'
-            turn: 1,
-            energy: 1,
-            selectedLanes: ['none', 'none', 'none'],
-            opponentArchetype: 'destroy'
-        };
-
-        // --- DOM ELEMENTS ---
-        const presetButtonsContainer = document.getElementById('preset-buttons-container');
-        const cardGrid = document.getElementById('card-grid');
-        const turnDisplay = document.getElementById('turn-display');
-        const energyDisplay = document.getElementById('energy-display');
-        const deckCountDisplay = document.getElementById('deck-count-display');
-        const drawnCountSummary = document.getElementById('drawn-count-summary');
-        const btnAdvanceTurn = document.getElementById('btn-advance-turn');
-        const btnReset = document.getElementById('btn-reset');
-
-        const probT3 = document.getElementById('prob-t3');
-        const probT4 = document.getElementById('prob-t4');
-        const probT5 = document.getElementById('prob-t5');
-        const probT6 = document.getElementById('prob-t6');
-        const optimalDrawsList = document.getElementById('optimal-draws-list');
-        const deadDrawsList = document.getElementById('dead-draws-list');
-
-        const locationSearchInput = document.getElementById('location-search-input');
-        const locationSuggestions = document.getElementById('location-suggestions');
-        const lane1Select = document.getElementById('lane-1-select');
-        const lane2Select = document.getElementById('lane-2-select');
-        const lane3Select = document.getElementById('lane-3-select');
-        const locationCardsContainer = document.getElementById('location-cards-container');
-
-        const opponentArchetypeSelect = document.getElementById('opponent-archetype-select');
-        const techThreatsGrid = document.getElementById('tech-threats-grid');
-        const snapConditionText = document.getElementById('snap-condition-text');
-        const retreatConditionText = document.getElementById('retreat-condition-text');
-
-        const importModal = document.getElementById('import-modal');
-        const btnOpenCodeImport = document.getElementById('btn-open-code-import');
-        const btnCloseModal = document.getElementById('btn-close-modal');
-        const btnCancelModal = document.getElementById('btn-cancel-modal');
-        const btnConfirmModal = document.getElementById('btn-confirm-modal');
-        const importTextarea = document.getElementById('import-textarea');
-
-        // --- INITIALIZATION ---
-        function init() {
-            renderPresetButtons();
-            populateLocationSelects();
-            loadDeck('destroy');
-            setupEventListeners();
-        }
-
-        // --- TOP BAR PRESET BUTTONS ---
-        function renderPresetButtons() {
-            presetButtonsContainer.innerHTML = '';
-            for (let key in META_DECKS) {
-                const deck = META_DECKS[key];
-                const btn = document.createElement('button');
-                btn.className = `px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border transition ${
-                    state.activeDeckKey === key 
-                        ? 'bg-cyan-500 text-black border-cyan-400 font-extrabold shadow-sm shadow-cyan-400' 
-                        : 'bg-snap-panel border-snap-border text-gray-300 hover:border-gray-500'
-                }`;
-                btn.innerHTML = `<i class="fa-solid ${deck.icon}"></i> ${deck.name}`;
-                btn.addEventListener('click', () => loadDeck(key));
-                presetButtonsContainer.appendChild(btn);
-            }
-        }
-
-        // --- LOAD DECK ---
-        function loadDeck(key) {
-            state.activeDeckKey = key;
-            if (META_DECKS[key]) {
-                state.currentDeckCards = JSON.parse(JSON.stringify(META_DECKS[key].cards));
-            }
-            renderPresetButtons();
-            resetMatch();
-        }
-
-        // --- RESET MATCH ---
-        function resetMatch() {
-            state.turn = 1;
-            state.energy = 1;
-            state.cardStates = {};
-
-            // Default all cards to deck
-            state.currentDeckCards.forEach(card => {
-                state.cardStates[card.name] = 'deck';
-            });
-
-            // Auto-draw 3 starting cards into hand
-            const shuffle = [...state.currentDeckCards].sort(() => 0.5 - Math.random());
-            for (let i = 0; i < Math.min(3, shuffle.length); i++) {
-                state.cardStates[shuffle[i].name] = 'hand';
-            }
-
-            updateUI();
-        }
-
-        // --- CYCLE CARD STATE (Deck -> Hand -> Dead -> Deck) ---
-        function cycleCardState(cardName) {
-            const current = state.cardStates[cardName] || 'deck';
-            let next = 'deck';
-            if (current === 'deck') next = 'hand';
-            else if (current === 'hand') next = 'dead';
-            else if (current === 'dead') next = 'deck';
-
-            state.cardStates[cardName] = next;
-            updateUI();
-        }
-
-        // --- ADVANCE TURN ENGINE ---
-        function advanceTurn() {
-            if (state.turn < 6) {
-                state.turn++;
-                state.energy = state.turn;
-                updateUI();
-            }
-        }
-
-        // --- CALCULATE DRAW PROBABILITIES (HYPERGEOMETRIC) ---
-        function updateDrawProbabilities() {
-            const deckCount = Object.values(state.cardStates).filter(s => s === 'deck').length;
-            deckCountDisplay.textContent = deckCount;
-            drawnCountSummary.textContent = `Remaining Deck: ${deckCount}`;
-
-            // Helper for probability to draw 1 specific target in N remaining draws
-            const calcProb = (targetTurn) => {
-                const turnsLeft = targetTurn - state.turn;
-                if (turnsLeft <= 0 || deckCount <= 0) return 0;
-                const drawsAvailable = Math.min(turnsLeft, deckCount);
-                // Chance = (draws / remainingDeck)
-                const prob = (drawsAvailable / deckCount) * 100;
-                return Math.min(100, prob);
-            };
-
-            probT3.textContent = `${calcProb(3).toFixed(0)}%`;
-            probT4.textContent = `${calcProb(4).toFixed(0)}%`;
-            probT5.textContent = `${calcProb(5).toFixed(0)}%`;
-            probT6.textContent = `${calcProb(6).toFixed(0)}%`;
-
-            // Optimal & Dead list dynamic breakdown
-            const remainingDeckCards = state.currentDeckCards.filter(c => state.cardStates[c.name] === 'deck');
+  <div class="presets">
+kCards.filter(c => state.cardStates[c.name] === 'deck');
             const remainingHandCards = state.currentDeckCards.filter(c => state.cardStates[c.name] === 'hand');
 
             const optimalRemaining = remainingDeckCards.filter(c => c.optimal);
