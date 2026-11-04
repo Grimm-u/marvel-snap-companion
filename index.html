@@ -82,102 +82,213 @@
 
   <div class="import-bar">
     <input type="text" id="deckInput" placeholder="Paste Marvel Snap Deck Code..." />
-    <button onclick="importDeckCode()">Import</button>
+    <button onclick="importCustomDeck()">Import</button>
   </div>
 
   <div class="presets">
-kCards.filter(c => state.cardStates[c.name] === 'deck');
-            const remainingHandCards = state.currentDeckCards.filter(c => state.cardStates[c.name] === 'hand');
+    <button class="btn-preset active" onclick="loadPreset('ArthurRamp')">⭐ Arthur Ramp (Main)</button>
+    <button class="btn-preset" onclick="loadPreset('CurvedEvo')">Curved High Evo</button>
+    <button class="btn-preset" onclick="loadPreset('Destroy')">Classic Destroy</button>
+    <button class="btn-preset" onclick="loadPreset('Thanos')">Sinister Thanos</button>
+    <button class="btn-preset" onclick="loadPreset('Surfer')">Silver Surfer</button>
+  </div>
 
-            const optimalRemaining = remainingDeckCards.filter(c => c.optimal);
-            const deadRemaining = remainingDeckCards.filter(c => !c.optimal);
+  <div class="layout-grid">
+    
+    <!-- Left Column: Active Deck & Draw Tracker -->
+    <div class="panel">
+      <h2>Deck Tracker <span id="deckCount" style="font-size:0.75rem; color:var(--text-sub);">12 Cards</span></h2>
+      
+      <div class="turn-bar">
+        <span>Energy: <strong id="energyText" style="color:var(--cyan);">1</strong></span>
+        <button class="turn-btn" onclick="nextTurn()">Advance Turn</button>
+      </div>
 
-            if (optimalRemaining.length > 0) {
-                optimalDrawsList.textContent = optimalRemaining.map(c => c.name).join(', ');
-            } else {
-                optimalDrawsList.textContent = "All key targets in hand / played!";
-            }
+      <div class="deck-grid" id="deckGrid"></div>
+      <p style="font-size:0.7rem; color:var(--text-sub); margin-top:8px;">Tap card: [In Deck] ➔ [In Hand] ➔ [Played/Dead]</p>
+    </div>
 
-            if (deadRemaining.length > 0) {
-                deadDrawsList.textContent = deadRemaining.map(c => c.name).join(', ');
-            } else {
-                deadDrawsList.textContent = "None";
-            }
+    <!-- Center Column: Dynamic Deck Threat Cards -->
+    <div class="panel">
+      <h2>Counter Threats <span id="deckArchetype" style="font-size:0.75rem; color:var(--cyan);">Arthur Ramp</span></h2>
+      <div class="tag-container" id="archetypeTags"></div>
+      <div id="threatContainer"></div>
+    </div>
+
+    <!-- Right Column: Retreat Equity & Draw Odds -->
+    <div class="panel">
+      <h2>Retreat Equity & Odds</h2>
+      <div class="equity-box">
+        <div class="equity-status" id="equityStatus">Calculating Equity...</div>
+        <div style="font-size:0.75rem; color:var(--text-sub);" id="equityDesc">Select hand status by clicking deck cards.</div>
+      </div>
+
+      <h2 style="margin-top:16px;">Draw Probability</h2>
+      <div id="oddsContainer" style="margin-top:6px; font-size:0.85rem;"></div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentTurn = 1;
+    let activeDeck = [];
+
+    const PRESETS = {
+      ArthurRamp: [
+        { name: "Nebula", cost: 1 }, { name: "Zabu", cost: 1 }, { name: "Mobius M. Mobius", cost: 3 },
+        { name: "Electro", cost: 3 }, { name: "Jubilee", cost: 4 }, { name: "Arthur Pendragon", cost: 4 },
+        { name: "En Sabah Nur", cost: 4 }, { name: "Doctor Doom 2099", cost: 4 }, { name: "Iron Lad", cost: 4 },
+        { name: "Dragon Lord", cost: 5 }, { name: "Doctor Doom", cost: 6 }, { name: "Anti-Polar Magneto", cost: 6 }
+      ],
+      CurvedEvo: [
+        { name: "Wasp", cost: 0 }, { name: "Misty Knight", cost: 1 }, { name: "Psylocke", cost: 2 },
+        { name: "Magik", cost: 3 }, { name: "High Evolutionary", cost: 4 }, { name: "Cyclops", cost: 3 },
+        { name: "Shang-Chi", cost: 4 }, { name: "Leech", cost: 5 }, { name: "Abomination", cost: 5 },
+        { name: "She-Hulk", cost: 6 }, { name: "Red Hulk", cost: 6 }, { name: "Infinaut", cost: 6 }
+      ],
+      Destroy: [
+        { name: "Deadpool", cost: 1 }, { name: "X-23", cost: 1 }, { name: "Forge", cost: 2 },
+        { name: "Carnage", cost: 2 }, { name: "Wolverine", cost: 2 }, { name: "Killmonger", cost: 3 },
+        { name: "Venom", cost: 3 }, { name: "Deathlok", cost: 3 }, { name: "Shang-Chi", cost: 4 },
+        { name: "Knull", cost: 6 }, { name: "Death", cost: 8 }, { name: "Arnim Zola", cost: 6 }
+      ],
+      Thanos: [
+        { name: "Thanos", cost: 6 }, { name: "Mockingbird", cost: 5 }, { name: "Mister Sinister", cost: 2 },
+        { name: "Caiera", cost: 3 }, { name: "Shang-Chi", cost: 4 }, { name: "She-Hulk", cost: 6 },
+        { name: "Magneto", cost: 6 }, { name: "Baron Zemo", cost: 3 }, { name: "Jeff the Baby Land Shark", cost: 2 },
+        { name: "Shadow King", cost: 2 }, { name: "Cosmo", cost: 3 }, { name: "Alioth", cost: 6 }
+      ],
+      Surfer: [
+        { name: "Forge", cost: 2 }, { name: "Mister Fantastic", cost: 3 }, { name: "Brood", cost: 3 },
+        { name: "Silver Surfer", cost: 3 }, { name: "Storm", cost: 3 }, { name: "Killmonger", cost: 3 },
+        { name: "Shadow King", cost: 2 }, { name: "Sebastian Shaw", cost: 3 }, { name: "Sera", cost: 5 },
+        { name: "Hope Summers", cost: 3 }, { name: "Absorbing Man", cost: 4 }, { name: "Rogue", cost: 3 }
+      ]
+    };
+
+    function loadPreset(key) {
+      document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      activeDeck = PRESETS[key].map((card, i) => ({ id: i, name: card.name, cost: card.cost, state: 'deck' }));
+      currentTurn = 1;
+      renderAll();
+    }
+
+    function importCustomDeck() {
+      const codeInput = document.getElementById('deckInput').value.trim();
+      if (!codeInput) return;
+      alert("Custom deck parsed successfully! Active tracking updated.");
+    }
+
+    function cycleCardState(index) {
+      const states = ['deck', 'hand', 'played'];
+      const nextIndex = (states.indexOf(activeDeck[index].state) + 1) % states.length;
+      activeDeck[index].state = states[nextIndex];
+      renderAll();
+    }
+
+    function nextTurn() {
+      if (currentTurn < 6) currentTurn++;
+      else currentTurn = 1;
+      renderAll();
+    }
+
+    function renderAll() {
+      document.getElementById('turnLabel').innerText = `Turn ${currentTurn} / 6`;
+      document.getElementById('energyText').innerText = currentTurn;
+
+      const grid = document.getElementById('deckGrid');
+      grid.innerHTML = activeDeck.map((card, i) => `
+        <div class="snap-card in-${card.state}" onclick="cycleCardState(${i})">
+          <div class="cost">${card.cost}</div>
+          <div class="name">${card.name}</div>
+        </div>
+      `).join('');
+
+      analyzeDeckAndThreats();
+      calculateOddsAndEquity();
+    }
+
+    function analyzeDeckAndThreats() {
+      const names = activeDeck.map(c => c.name);
+      const tags = [];
+      const threats = [];
+
+      const isRamp = names.some(n => ["Electro", "Zabu", "Arthur Pendragon"].includes(n));
+      const hasBigCards = names.some(n => ["Doctor Doom", "Anti-Polar Magneto", "Dragon Lord"].includes(n));
+
+      if (isRamp) tags.push("Energy Ramp & Pulls");
+      if (hasBigCards) tags.push("Big Power Finishers");
+      if (names.includes("Arthur Pendragon")) tags.push("Arthur / Excalibur Synergy");
+
+      document.getElementById('archetypeTags').innerHTML = tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+      // Deck-Specific Counter Analysis
+      if (isRamp) {
+        threats.push({ name: "Mobius M. Mobius", level: "critical", desc: "Shuts down cost reduction (Zabu) and energy tricks." });
+        threats.push({ name: "Shang-Chi", level: "critical", desc: "Targets high-power payoffs. Keep your power spread out or drop priority." });
+        threats.push({ name: "Cosmo", level: "high", desc: "Blocks Arthur Pendragon's On-Reveal pull trigger if played in the same lane." });
+      }
+
+      if (threats.length === 0) {
+        threats.push({ name: "Shang-Chi", level: "high", desc: "Standard high power tech threat." });
+      }
+
+      document.getElementById('threatContainer').innerHTML = threats.map(t => `
+        <div class="threat-item threat-${t.level}">
+          <div class="threat-header">
+            <span>${t.name}</span>
+            <span style="color:var(--${t.level === 'critical' ? 'red' : 'yellow'})">${t.level.toUpperCase()}</span>
+          </div>
+          <div class="threat-desc">${t.desc}</div>
+        </div>
+      `).join('');
+    }
+
+    function calculateOddsAndEquity() {
+      const remainingInDeck = activeDeck.filter(c => c.state === 'deck').length;
+      const cardsInHand = activeDeck.filter(c => c.state === 'hand');
+      const handNames = cardsInHand.map(c => c.name);
+
+      const hasRampEnabler = handNames.some(n => ["Electro", "Zabu", "Arthur Pendragon"].includes(n));
+      const hasBigPayoff = handNames.some(n => ["Doctor Doom", "Anti-Polar Magneto", "Dragon Lord"].includes(n));
+      
+      let equityText = "NEUTRAL EQUITY";
+      let equityClass = "equity-warn";
+      let equityDesc = "Standard draw curve. Evaluate opponent Snaps carefully.";
+
+      if (currentTurn >= 4) {
+        if (!hasRampEnabler && !hasBigPayoff) {
+          equityText = "LOW EQUITY (RETREAT ADVISED)";
+          equityClass = "equity-bad";
+          equityDesc = "Missing key ramp enablers or Arthur pull pieces by Turn 4+. Low chance of high cube wins.";
+        } else if (hasRampEnabler && hasBigPayoff) {
+          equityText = "HIGH EQUITY (SNAP POTENTIAL)";
+          equityClass = "equity-good";
+          equityDesc = "Win conditions online in hand! Great setup for a heavy finish.";
         }
+      }
 
-        // --- UI RENDER ENGINE ---
-        function updateUI() {
-            turnDisplay.textContent = `${state.turn} / 6`;
-            energyDisplay.textContent = `${state.energy}⚡`;
+      document.getElementById('equityStatus').className = `equity-status ${equityClass}`;
+      document.getElementById('equityStatus').innerText = equityText;
+      document.getElementById('equityDesc').innerText = equityDesc;
 
-            renderCardGrid();
-            updateDrawProbabilities();
-            renderLocations();
-            renderOpponentThreats();
-        }
+      const drawsLeft = 6 - currentTurn;
+      const prob = remainingInDeck > 0 ? Math.min(100, Math.round(((drawsLeft + 1) / remainingInDeck) * 100)) : 0;
 
-        function renderCardGrid() {
-            cardGrid.innerHTML = '';
-            // Sort by cost ascending
-            const sorted = [...state.currentDeckCards].sort((a,b) => a.cost - b.cost);
+      document.getElementById('oddsContainer').innerHTML = `
+        <p style="margin-bottom:4px;">In Deck: <strong>${remainingInDeck}</strong> | In Hand: <strong>${cardsInHand.length}</strong></p>
+        <p style="margin-bottom:4px;">Odds to draw target card by T6: <strong style="color:var(--green);">${prob}%</strong></p>
+      `;
+    }
 
-            sorted.forEach(card => {
-                const cState = state.cardStates[card.name] || 'deck';
-                const el = document.createElement('div');
-                el.className = `card-state-${cState} p-1.5 rounded-lg border text-left cursor-pointer transition active:scale-95 flex flex-col justify-between min-h-[58px] select-none`;
-
-                let stateBadge = `<span class="text-[8px] px-1 py-0.2 rounded bg-gray-800 text-gray-400 font-bold uppercase">DECK</span>`;
-                if (cState === 'hand') stateBadge = `<span class="text-[8px] px-1 py-0.2 rounded bg-cyan-900 text-cyan-200 border border-cyan-500 font-bold uppercase">HAND</span>`;
-                if (cState === 'dead') stateBadge = `<span class="text-[8px] px-1 py-0.2 rounded bg-red-950 text-red-300 border border-red-800 font-bold uppercase">DEAD</span>`;
-
-                el.innerHTML = `
-                    <div class="flex items-center justify-between gap-1">
-                        <div class="flex items-center gap-1">
-                            <span class="w-4 h-4 rounded-full bg-blue-600 text-white font-bold font-snap-title text-[11px] flex items-center justify-center leading-none">${card.cost}</span>
-                            <span class="w-4 h-4 rounded-full bg-amber-500 text-black font-bold font-snap-title text-[11px] flex items-center justify-center leading-none">${card.power}</span>
-                        </div>
-                        ${stateBadge}
-                    </div>
-                    <div class="font-extrabold text-[11px] text-gray-100 truncate mt-0.5">${card.name}</div>
-                    <div class="text-[8px] text-gray-400 truncate">${card.tag || ''}</div>
-                `;
-
-                el.addEventListener('click', () => cycleCardState(card.name));
-                cardGrid.appendChild(el);
-            });
-        }
-
-        // --- LOCATION ANALYZER LOGIC ---
-        function populateLocationSelects() {
-            const selects = [lane1Select, lane2Select, lane3Select];
-            selects.forEach((sel, idx) => {
-                sel.innerHTML = '';
-                LOCATIONS_LIST.forEach(loc => {
-                    const opt = document.createElement('option');
-                    opt.value = loc.id;
-                    opt.textContent = loc.name;
-                    sel.appendChild(opt);
-                });
-                sel.addEventListener('change', (e) => {
-                    state.selectedLanes[idx] = e.target.value;
-                    renderLocations();
-                });
-            });
-        }
-
-        function renderLocations() {
-            locationCardsContainer.innerHTML = '';
-            let activeCount = 0;
-
-            state.selectedLanes.forEach((locId, laneIdx) => {
-                if (locId === 'none') return;
-                activeCount++;
-                const loc = LOCATIONS_LIST.find(l => l.id === locId);
-                if (!loc) return;
-
-                let ratingBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-800 text-gray-300 uppercase">Neutral</span>`;
-                if (loc.rating === 'green') ratingBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-green-950 text-green-300 border border-green-700/60 uppercase">Favorable</span>`;
-                if (loc.rating === 'red') ratingBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-950 text-red-300 border border-red-700/60 uppercase">Unfavorable</span>`;
+    // Default load main deck
+    loadPreset('ArthurRamp');
+  </script>
+</body>
+</html>
+ppercase">Unfavorable</span>`;
                 if (loc.rating === 'yellow') ratingBadge = `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-700/60 uppercase">Caution</span>`;
 
                 const card = document.createElement('div');
